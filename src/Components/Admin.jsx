@@ -27,7 +27,6 @@ const Admin = () => {
       setPedidos(docs);
     });
 
-    // Escuchar estado del sistema
     const unsubscribeEstado = onSnapshot(doc(db, "configuracion", "estado_tienda"), (docSnap) => {
       if (docSnap.exists()) {
         setSistemaAbierto(docSnap.data().abierto);

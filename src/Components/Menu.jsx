@@ -1,4 +1,4 @@
-import  { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { db } from '../Firebase/config';
 import { collection, getDocs, addDoc, doc, onSnapshot } from 'firebase/firestore';
 import { useLocation } from 'react-router-dom';
@@ -21,19 +21,39 @@ const Menu = () => {
   const opcionesJarabe = ['Ninguno', 'Menta', 'Canela', 'Avellana', 'Vainilla', 'Caramelo'];
 
   useEffect(() => {
-   
     const unsubscribeEstado = onSnapshot(doc(db, "configuracion", "estado_tienda"), (docSnap) => {
       if (docSnap.exists()) {
         setSistemaAbierto(docSnap.data().abierto);
       }
     });
 
-   
     const obtenerDatos = async () => {
       try {
         const datos = await getDocs(collection(db, 'productos'));
-        setProductos(datos.docs.map(doc => ({ ...doc.data(), id: doc.id })));
-      } catch (error) { console.error("Error:", error); }
+        const productosProcesados = datos.docs.map(doc => {
+          const rawData = doc.data();
+          
+          const data = {};
+          Object.keys(rawData).forEach(key => {
+            data[key.trim()] = rawData[key];
+          });
+
+          const categoriaLimpia = data.categoria 
+            ? String(data.categoria).replace(/\s+/g, '').toLowerCase() 
+            : 'todos';
+
+          return {
+            id: doc.id,
+            nombre: data.nombre || 'Producto sin nombre',
+            precio: data.precio || 0,
+            imagen: data.imagen || '/logo-kaizen.png', 
+            categoria: categoriaLimpia
+          };
+        });
+        setProductos(productosProcesados);
+      } catch (error) { 
+        console.error("Error obteniendo productos de Firestore:", error); 
+      }
     };
 
     obtenerDatos();
@@ -43,21 +63,18 @@ const Menu = () => {
   const agregarAlCarrito = () => {
     if (!productoSeleccionado) return;
     const nombre = productoSeleccionado.nombre.toLowerCase();
-    const categoria = (productoSeleccionado.categoria || '').toLowerCase().trim();
+    const categoria = productoSeleccionado.categoria;
     
-    // REGLA TRADICIONALES Y ALIMENTOS (No llevan leche)
     const esTradicional = nombre.includes('sheikiatto') || 
                           nombre.includes('afrogatto') || 
                           nombre.includes('tonic') || 
                           nombre.includes('sun rise') || 
                           nombre.includes('perrier') || 
                           nombre.includes('agua') ||
-                          nombre.includes('galleta'); // Soporta "galleta", "galletas", etc.
+                          nombre.includes('galleta');
 
-    // LECHE: Todo lo que no sea tradicional/alimento (Ice Matcha sí lleva)
     const permiteLeche = !esTradicional;
 
-    // JARABE: Calientes, Golden Moka e Ice Matcha (Las galletas y tradicionales no llevan)
     const permiteJarabe = (
       categoria === 'caliente' || 
       nombre.includes('golden moka') || 
@@ -104,7 +121,7 @@ const Menu = () => {
       });
       alert("¡Pedido enviado a barra!");
       setCarrito([]);
-    } catch (e) { console.error("Error:", e); }
+    } catch (e) { console.error("Error enviando pedido:", e); }
   };
 
   if (!sistemaAbierto) {
@@ -142,7 +159,7 @@ const Menu = () => {
 
       <div style={{ maxWidth: '600px', margin: '0 auto', padding: '0 15px', position: 'relative', zIndex: 1 }}>
         {productos
-          .filter(p => categoriaActiva === 'todos' || p.categoria?.toLowerCase().trim() === categoriaActiva)
+          .filter(p => categoriaActiva === 'todos' || p.categoria === categoriaActiva)
           .map(p => (
             <div key={p.id} className="tarjeta-producto">
               <img src={p.imagen} alt={p.nombre} style={{ width: '70px', height: '70px', borderRadius: '10px', objectFit: 'cover', marginRight: '15px' }} />
@@ -152,7 +169,7 @@ const Menu = () => {
               </div>
               <button onClick={() => { setLeche('Entera'); setJarabe('Ninguno'); setProductoSeleccionado(p); }} style={{ backgroundColor: '#CBBBA0', border: 'none', padding: '10px 15px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' }}>Añadir</button>
             </div>
-        ))}
+          ))}
       </div>
 
       {productoSeleccionado && (
@@ -160,7 +177,7 @@ const Menu = () => {
           <div style={{ backgroundColor: '#1c2c3c', border: '2px solid #CBBBA0', borderRadius: '25px', padding: '25px', width: '90%', maxWidth: '400px' }}>
             <h2 style={{ textAlign: 'center', marginTop: 0 }}>{productoSeleccionado.nombre}</h2>
             
-            {/* TIPO DE LECHE: No se muestra en tradicionales ni galletas */}
+
             {!(productoSeleccionado.nombre.toLowerCase().includes('sheikiatto') || 
                productoSeleccionado.nombre.toLowerCase().includes('afrogatto') || 
                productoSeleccionado.nombre.toLowerCase().includes('tonic') || 
@@ -176,8 +193,7 @@ const Menu = () => {
               </div>
             ) : <p style={{ textAlign: 'center', color: '#CBBBA0', margin: '20px 0', fontSize: '14px' }}>Producto de receta fija sin lácteos.</p>}
 
-            {/* JARABE ADICIONAL: Calientes, Golden Moka e Ice Matcha (Tradicionales y galletas no) */}
-            {(productoSeleccionado.categoria?.toLowerCase().trim() === 'caliente' || 
+            {(productoSeleccionado.categoria === 'caliente' || 
               productoSeleccionado.nombre.toLowerCase().includes('golden moka') ||
               productoSeleccionado.nombre.toLowerCase().includes('ice matcha')) && 
              !(productoSeleccionado.nombre.toLowerCase().includes('sheikiatto') || 
@@ -218,41 +234,10 @@ const Menu = () => {
           </button>
         </div>
       )}
-      {/* FOOTER DE INSTAGRAM AL FINAL DE LA PÁGINA */}
-      <div style={{ 
-        width: '100%', 
-        textAlign: 'center', 
-        padding: '20px 0', 
-        marginTop: '40px',
-        borderTop: '1px solid rgba(203, 187, 160, 0.15)',
-        backgroundColor: 'rgba(28, 44, 60, 0.2)'
-      }}>
-        <a 
-          href="https://www.instagram.com/kaizen_kafe/?hl=es" 
-          target="_blank" 
-          rel="noopener noreferrer" 
-          style={{ 
-            display: 'inline-flex', 
-            alignItems: 'center', 
-            gap: '8px', 
-            color: '#CBBBA0', 
-            textDecoration: 'none', 
-            fontSize: '14px',
-            fontWeight: '500',
-            letterSpacing: '1px'
-          }}
-        >
-          <svg 
-            xmlns="http://www.w3.org/2000/svg" 
-            width="18" 
-            height="18" 
-            viewBox="0 0 24 24" 
-            fill="none" 
-            stroke="currentColor" 
-            strokeWidth="2" 
-            strokeLinecap="round" 
-            strokeLinejoin="round"
-          >
+
+      <div style={{ width: '100%', textAlign: 'center', padding: '20px 0', marginTop: '40px', borderTop: '1px solid rgba(203, 187, 160, 0.15)', backgroundColor: 'rgba(28, 44, 60, 0.2)' }}>
+        <a href="https://www.instagram.com/kaizen_kafe/?hl=es" target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', color: '#CBBBA0', textDecoration: 'none', fontSize: '14px', fontWeight: '500', letterSpacing: '1px' }}>
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
             <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
             <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
