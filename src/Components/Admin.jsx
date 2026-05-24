@@ -17,7 +17,6 @@ const Admin = () => {
   const [sistemaAbierto, setSistemaAbierto] = useState(true);
 
   useEffect(() => {
-    // Escuchar pedidos en tiempo real
     const q = query(collection(db, 'pedidos'), orderBy('fecha', 'desc'));
     const unsubscribePedidos = onSnapshot(q, (snapshot) => {
       const docs = snapshot.docs.map(doc => ({
@@ -52,8 +51,6 @@ const Admin = () => {
   const toggleSistema = async () => {
     try {
       const nuevoEstado = !sistemaAbierto;
-      
-      // Si estamos abriendo el turno, limpiamos los pedidos de ayer
       if (nuevoEstado === true) {
         const confirmar = window.confirm("¿Deseas abrir el turno y limpiar los pedidos del día anterior?");
         if (confirmar) {
@@ -73,10 +70,7 @@ const Admin = () => {
     try {
       const pedidoRef = doc(db, 'pedidos', pedidoId);
       const pedido = pedidos.find(p => p.id === pedidoId);
-      
-      // Creamos una copia de los items con el estado actualizado
       const nuevosItems = [...pedido.items];
-      // Si el item ya tiene estructura de objeto lo usamos, si no, lo convertimos
       if (typeof nuevosItems[indexItem] === 'string') {
         nuevosItems[indexItem] = {
           nombre: nuevosItems[indexItem],
