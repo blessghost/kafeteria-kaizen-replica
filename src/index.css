@@ -1,4 +1,3 @@
-/* --- ANIMACIONES --- */
 @keyframes glow {
   0% { 
     box-shadow: 0 0 10px #CBBBA0, inset 0 0 15px rgba(0,0,0,0.6); 
@@ -14,7 +13,6 @@
   }
 }
 
-/* --- FONDO Y TEXTURA --- */
 .background-kaizen {
   background: radial-gradient(circle at center, #243b55 0%, #1c2c3c 100%);
   position: relative;
@@ -34,7 +32,6 @@
   z-index: 0;
 }
 
-/* --- LOGO ESTÁTICO (CORREGIDO) --- */
 .logo-kaizen-estatico {
   display: flex;
   justify-content: center;
@@ -46,7 +43,6 @@
   border: 4px solid #CBBBA0;
   background-color: #000;
   overflow: hidden;
-  /* Mantenemos solo el destello, eliminamos el giro */
   animation: glow 3s infinite ease-in-out; 
   position: relative;
   z-index: 1;
@@ -60,7 +56,6 @@
   display: block;
 }
 
-/* --- TÍTULO VINTAGE --- */
 .titulo-vintage {
   letter-spacing: 5px;
   font-size: 26px;
@@ -87,7 +82,6 @@
   z-index: 1;
 }
 
-/* --- TARJETAS DE PRODUCTO --- */
 .tarjeta-producto {
   background: rgba(255, 255, 255, 0.03);
   backdrop-filter: blur(8px);
@@ -107,7 +101,6 @@
   transform: translateY(-2px);
 }
 
-/* --- BOTÓN CONFIRMAR VINTAGE --- */
 .boton-confirmar-vintage {
   width: 100%;
   padding: 16px;
